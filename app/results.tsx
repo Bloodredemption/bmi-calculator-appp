@@ -74,10 +74,10 @@ export default function ModalScreen() {
                 <Text style={styles.resultTitle}>Healthy weight range:</Text>
                 <Text style={styles.resultValue}>{minWeight}{unit} - {maxWeight}{unit}</Text>
             </View>
-            <View style={styles.resultRow}>
+            {/* <View style={styles.resultRow}>
                 <Text style={styles.resultTitle}>Your height:</Text>
                 <Text style={styles.resultValue}>{height}</Text>
-            </View>
+            </View> */}
             <View style={styles.resultRow}>
                 <Text style={styles.resultTitle}>Your category:</Text>
                 <Text style={styles.resultValue}>{bmiDescription}</Text>
