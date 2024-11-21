@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
-import { Button, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { Button, TouchableOpacity, StyleSheet, TextInput, Switch } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Text, View } from '@/components/Themed';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useColorScheme } from 'react-native';
 
 export default function TabOneScreen() {
-  const [selectedGender, setSelectedGender] = useState(null); // Track selected gender
+  const [selectedGender, setSelectedGender] = useState<string | null>(null); // Track selected gender
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
-  const [weightUnit, setWeightUnit] = useState('lb');
+  const [weightUnit, setWeightUnit] = useState('kg');
 
   const [height, setHeight] = useState('');
   const [heightUnit, setHeightUnit] = useState('cm');
   const [heightInches, setHeightInches] = useState('');
+  const [isSwitchOn, setIsSwitchOn] = useState(false); // State for switch
+  const colorScheme = useColorScheme();
+  const router = useRouter();
 
-  const handleHeightUnitChange = (itemValue) => {
+  const handleHeightUnitChange = (itemValue: string) => {
     setHeightUnit(itemValue);
     if (itemValue === 'cm') {
       // Reset height and inches when switching to cm
@@ -26,23 +31,97 @@ export default function TabOneScreen() {
   };
 
   const resetFields = () => {
+    setSelectedGender(null); // Reset selected gender
     setAge('');
     setHeight('');
     setHeightInches('');
-    setHeightUnit('ft');  // Reset to default unit if desired
+    setHeightUnit('cm');  // Reset to default unit if desired
     setWeight('');
-    setWeightUnit('lb');  // Reset to default unit if desired
+    setWeightUnit('kg');  // Reset to default unit if desired
   };
+
+  const calculateBMI = () => {
+    let heightInMeters;
+    if (heightUnit === 'cm') {
+      heightInMeters = parseFloat(height) / 100;
+    } else {
+      heightInMeters = (parseFloat(height) * 0.3048) + (parseFloat(heightInches) * 0.0254);
+    }
+
+    let weightInKg;
+    if (weightUnit === 'kg') {
+      weightInKg = parseFloat(weight);
+    } else {
+      weightInKg = parseFloat(weight) * 0.453592;
+    }
+
+    let bmi = weightInKg / (heightInMeters * heightInMeters);
+    return { bmi: bmi.toFixed(1), gender: selectedGender };
+  };
+
+  const validateInputs = () => {
+    if (!selectedGender) {
+      alert('Please select a gender.');
+      return false;
+    }
+    if (!age || !weight || !height || (heightUnit === 'ft' && !heightInches)) {
+      alert('Please fill in all fields.');
+      return false;
+    }
+    return true;
+  };
+
+  const saveBMIToLocalStorage = async (bmi: string, date: string) => {
+    try {
+      const existingData = await AsyncStorage.getItem('bmiData');
+      const newData = existingData ? JSON.parse(existingData) : [];
+      newData.push({ bmi, date });
+      await AsyncStorage.setItem('bmiData', JSON.stringify(newData));
+    } catch (error) {
+      console.error('Error saving BMI data', error);
+    }
+  };
+
+  const handleCalculatePress = async () => {
+    if (validateInputs()) {
+      const { bmi, gender } = calculateBMI();
+      const date = new Date().toLocaleDateString('en-GB'); // Format date as dd/mm/yyyy
+      await saveBMIToLocalStorage(bmi, date);
+      const heightValue = heightUnit === 'cm' ? `${height}cm` : `${height}ft ${heightInches}in`;
+      router.push({ pathname: '/results', params: { bmi, gender, height: heightValue } });
+    }
+  };
+
+  const handleThemeChange = () => {
+    setIsSwitchOn(!isSwitchOn);
+  };
+
+  const backgroundColors = isSwitchOn ? ['#183038', '#81ABB8'] : ['#55B8D7', '#fff'];
+  const textColor = isSwitchOn ? '#fff' : '#333';
+  const maleIconColor = selectedGender === 'male' ? (isSwitchOn ? '#0BA9AB' : '#0BA9AB') : (isSwitchOn ? '#aaa' : '#888');
+  const femaleIconColor = selectedGender === 'female' ? (isSwitchOn ? '#E652CA' : '#E652CA') : (isSwitchOn ? '#aaa' : '#888');
 
   return (
     <LinearGradient
-      colors={['#55B8D7', '#ffffff']}
+      colors={backgroundColors}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1.1 }}
       locations={[0, 1]} // Adjusts the color transition points
       style={styles.gradient}
     >
-      <Text style={styles.title}>BMI CALCULATOR</Text>
+      <View style={styles.switchContainer}>
+        <Ionicons name="sunny" size={24} color="#FFA500" />
+        <Switch
+          value={isSwitchOn}
+          onValueChange={handleThemeChange}
+          trackColor={{ false: '#767577', true: '#81b0ff' }}
+          thumbColor={isSwitchOn ? '#f5dd4b' : '#f4f3f4'}
+          ios_backgroundColor="#3e3e3e"
+          style={styles.switch}
+        />
+        <Ionicons name="moon" size={24} color="#000" />
+      </View>
+      <Text style={[styles.title, { color: textColor }]}>BMI CALCULATOR</Text>
 
       <View style={styles.genderContainer}>
         <TouchableOpacity
@@ -52,9 +131,9 @@ export default function TabOneScreen() {
           <Ionicons 
             name={selectedGender === 'male' ? 'male' : 'male-outline'}
             size={40}
-            color={selectedGender === 'male' ? '#0BA9AB' : '#888'}
+            color={maleIconColor}
           />
-          <Text style={styles.genderText}>Male</Text>
+          <Text style={[styles.genderText, { color: textColor }]}>Male</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -64,9 +143,9 @@ export default function TabOneScreen() {
           <Ionicons 
             name={selectedGender === 'female' ? 'female' : 'female-outline'}
             size={40}
-            color={selectedGender === 'female' ? '#E652CA' : '#888'}
+            color={femaleIconColor}
           />
-          <Text style={styles.genderText}>Female</Text>
+          <Text style={[styles.genderText, { color: textColor }]}>Female</Text>
         </TouchableOpacity>
       </View>
 
@@ -121,8 +200,8 @@ export default function TabOneScreen() {
               onValueChange={handleHeightUnitChange}
               mode="dropdown"
             >
-              <Picker.Item label="ft" value="ft" />
               <Picker.Item label="cm" value="cm" />
+              <Picker.Item label="ft" value="ft" />
             </Picker>
           </View>
         </View>
@@ -143,19 +222,17 @@ export default function TabOneScreen() {
               onValueChange={(itemValue) => setWeightUnit(itemValue)}
               mode="dropdown"
             >
-              <Picker.Item label="lb" value="lb" />
               <Picker.Item label="kg" value="kg" />
-            </Picker>
+              <Picker.Item label="lb" value="lb" />
+              </Picker>
           </View>
         </View>
       </View>
 
       <View style={styles.buttonContainer}>
-        <Link href="/results" asChild>
-          <TouchableOpacity style={styles.calculateButton}>
-            <Text style={styles.buttonText}>CALCULATE</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity style={styles.calculateButton} onPress={handleCalculatePress}>
+          <Text style={styles.buttonText}>CALCULATE</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.resetButton} onPress={resetFields}>
           <Text style={styles.buttonText}>RESET</Text>
         </TouchableOpacity>
@@ -277,5 +354,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', // White text color for readability
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  switchContainer: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'transparent',
+  },
+  switch: {
+    transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
   },
 });
