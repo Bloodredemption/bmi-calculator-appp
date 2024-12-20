@@ -7,17 +7,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
+import { getBackgroundColors } from '@/constants/globals';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function TabOneScreen() {
   const [selectedGender, setSelectedGender] = useState<string | null>(null); // Track selected gender
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
   const [weightUnit, setWeightUnit] = useState('kg');
+  const [name, setName] = useState('');
 
   const [height, setHeight] = useState('');
   const [heightUnit, setHeightUnit] = useState('cm');
   const [heightInches, setHeightInches] = useState('');
-  const [isSwitchOn, setIsSwitchOn] = useState(false); // State for switch
+  const { isSwitchOn, setIsSwitchOn } = useTheme();
   const colorScheme = useColorScheme();
   const router = useRouter();
 
@@ -31,6 +34,7 @@ export default function TabOneScreen() {
   };
 
   const resetFields = () => {
+    setName('');
     setSelectedGender(null); // Reset selected gender
     setAge('');
     setHeight('');
@@ -60,6 +64,10 @@ export default function TabOneScreen() {
   };
 
   const validateInputs = () => {
+    if (!name) {
+      alert('Please enter your name.');
+      return false;
+    }
     if (!selectedGender) {
       alert('Please select a gender.');
       return false;
@@ -75,7 +83,7 @@ export default function TabOneScreen() {
     try {
       const existingData = await AsyncStorage.getItem('bmiData');
       const newData = existingData ? JSON.parse(existingData) : [];
-      newData.push({ bmi, date });
+      newData.push({ name, bmi, date });
       await AsyncStorage.setItem('bmiData', JSON.stringify(newData));
     } catch (error) {
       console.error('Error saving BMI data', error);
@@ -96,7 +104,7 @@ export default function TabOneScreen() {
     setIsSwitchOn(!isSwitchOn);
   };
 
-  const backgroundColors = isSwitchOn ? ['#183038', '#81ABB8'] : ['#55B8D7', '#fff'];
+  const backgroundColors = getBackgroundColors(isSwitchOn);
   const textColor = isSwitchOn ? '#fff' : '#333';
   const maleIconColor = selectedGender === 'male' ? (isSwitchOn ? '#0BA9AB' : '#0BA9AB') : (isSwitchOn ? '#aaa' : '#888');
   const femaleIconColor = selectedGender === 'female' ? (isSwitchOn ? '#E652CA' : '#E652CA') : (isSwitchOn ? '#aaa' : '#888');
@@ -151,6 +159,15 @@ export default function TabOneScreen() {
 
       {/* Card with input fields */}
       <View style={styles.card}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your name"
+          />
+        </View>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Age</Text>
           <TextInput

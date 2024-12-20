@@ -4,15 +4,17 @@ import { Link } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { getBackgroundColors } from '@/constants/globals';
+import { useTheme } from '@/context/ThemeContext';
 
-const getBmiDescription = (bmi) => {
+const getBmiDescription = (bmi: number) => {
   if (bmi < 18.5) return 'Underweight';
   if (bmi >= 18.5 && bmi <= 24.9) return 'Normal weight';
   if (bmi >= 25 && bmi <= 29.9) return 'Overweight';
   return 'Obese';
 };
 
-const getBmiTip = (bmi) => {
+const getBmiTip = (bmi: number) => {
   if (bmi >= 30) return 'As your BMI increases, your risk of developing coronary heart disease, diabetes and some cancers increases. It is important that you take steps to reduce your weight.';
   if (bmi >= 25 && bmi < 30) return 'Being overweight increases your risk of developing coronary heart disease, as well as other health conditions such as diabetes. Keeping to a healthy weight will help you control your blood pressure and cholesterol levels.';
   if (bmi >= 18.5 && bmi < 25) return 'You have a normal weight for your height.';
@@ -21,9 +23,9 @@ const getBmiTip = (bmi) => {
 
 export default function ModalScreen() {
   const route = useRoute();
-  const { bmi, height } = route.params; // Ensure height is being passed here
+  const { bmi, height } = route.params as { bmi: number; height: string }; // Ensure height is being passed here
 
-  const cleanHeightValue = (height) => {
+  const cleanHeightValue = (height: string) => {
     if (typeof height === 'string') {
       const heightInCm = height.match(/(\d+)\s*cm/);
       if (heightInCm) {
@@ -39,7 +41,7 @@ export default function ModalScreen() {
     return { value: parseFloat(height), unit: 'cm' };
   };
 
-  const calculateHealthyWeightRange = (height) => {
+  const calculateHealthyWeightRange = (height: string) => {
     const { value: cleanedHeight, unit } = cleanHeightValue(height);
     const minHeightInMeters = cleanedHeight / 100;
     const minWeight = 18.5 * minHeightInMeters * minHeightInMeters;
@@ -56,50 +58,54 @@ export default function ModalScreen() {
   const bmiDescription = getBmiDescription(bmi);
   const bmiTip = getBmiTip(bmi);
 
+  const { isSwitchOn } = useTheme();
+  const backgroundColors = getBackgroundColors(isSwitchOn);
+  const textColor = isSwitchOn ? '#fff' : '#333';
+
   return (
     <LinearGradient
-      colors={['#55B8D7', '#ffffff']}
+      colors={backgroundColors}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1.1 }}
-      locations={[0, 1]} // Adjusts the color transition points
+      locations={[0, 1]}
       style={styles.gradient}
     >
         <View style={styles.bmiResultBox}>
-            <Text style={styles.resultsTitle}>RESULTS</Text>
-            <View style={styles.resultRow}>
-                <Text style={styles.resultTitle}>Your BMI:</Text>
-                <Text style={styles.resultValue}>{bmi}</Text>
-            </View>
-            <View style={styles.resultRow}>
-                <Text style={styles.resultTitle}>Healthy weight range:</Text>
-                <Text style={styles.resultValue}>{minWeight}{unit} - {maxWeight}{unit}</Text>
-            </View>
-            {/* <View style={styles.resultRow}>
-                <Text style={styles.resultTitle}>Your height:</Text>
-                <Text style={styles.resultValue}>{height}</Text>
-            </View> */}
-            <View style={styles.resultRow}>
-                <Text style={styles.resultTitle}>Your category:</Text>
-                <Text style={styles.resultValue}>{bmiDescription}</Text>
-            </View>
-            <Text style={styles.bmiTipText}>{bmiTip}</Text>
+          <Text style={styles.resultsTitle}>Your BMI is:</Text>
+          <Text style={styles.bmiresultValue}>{bmi}</Text>
+          <Text style={styles.bmidescresultValue}>{bmiDescription}</Text>
+
+          
+          {/* <View style={styles.resultRow}>
+              <Text style={styles.resultTitle}>Your height:</Text>
+              <Text style={styles.resultValue}>{height}</Text>
+          </View> */}
+          {/* <View style={styles.resultRow}>
+              <Text style={styles.resultTitle}>Your category:</Text>
+              <Text style={styles.resultValue}>{bmiDescription}</Text>
+          </View> */}
+          <Text style={styles.bmiTipText}>{bmiTip}</Text>
+
+          <Text style={styles.resultTitle}>Healthy weight range:</Text>
+          <Text style={styles.resultValue}>{minWeight}{unit} - {maxWeight}{unit}</Text>
+
+          
         </View>
 
-        {/* <View style={styles.separator} /> */}
-
-        <Text style={styles.title}>Guide</Text>
+        <View style={styles.separator} />
+        
+        <Text style={[styles.title, { color: textColor}]}>Guide</Text>
 
         <View style={styles.guideContainer}>
             <View style={[styles.guideColumn, styles.alignLeft]}>
-                <Text style={styles.guideText}>Underweight</Text>
-                <Text style={styles.guideText}>Normal</Text>
-                <Text style={styles.guideText}>Overweight</Text>
+                <Text style={[styles.guideText, { color: textColor}]}>Underweight</Text>
+                <Text style={[styles.guideText, { color: textColor}]}>Normal</Text>
+                <Text style={[styles.guideText, { color: textColor}]}>Overweight</Text>
             </View>
-            <View style={styles.separatorVertical} />
             <View style={[styles.guideColumn, styles.alignRight]}>
-                <Text style={styles.guideText}>&lt; 18.5</Text>
-                <Text style={styles.guideText}>18.5 - 24.9</Text>
-                <Text style={styles.guideText}>25 - 29.9</Text>
+                <Text style={[styles.guideText, { color: textColor}]}>&lt; 18.5</Text>
+                <Text style={[styles.guideText, { color: textColor}]}>18.5 - 24.9</Text>
+                <Text style={[styles.guideText, { color: textColor}]}>25 - 29.9</Text>
             </View>
         </View>
         
@@ -152,13 +158,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   guideText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '500',
     marginVertical: 2,
   },
   bmiResultBox: {
     width: '80%',
-    height: 'auto',
+    minHeight: 150,
     padding: 16,
     borderRadius: 10,
     borderWidth: 0,
@@ -169,25 +175,37 @@ const styles = StyleSheet.create({
   },
   resultsTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: 'semibold',
     color: '#333',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   resultRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
     marginBottom: 10,
+    marginTop: 10,
     backgroundColor: 'transparent',
   },
   resultTitle: {
     fontSize: 16,
     fontWeight: '900',
     color: '#333',
+    marginTop: 10,
   },
   resultValue: {
     fontSize: 16,
     fontWeight: '500',
+    color: '#333',
+  },
+  bmiresultValue: {
+    fontSize: 35,
+    fontWeight: '900',
+    color: '#333',
+  },
+  bmidescresultValue: {
+    fontSize: 15,
+    fontWeight: 'bold',
     color: '#333',
   },
   bmiResultText: {
@@ -212,7 +230,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     color: '#333',
-    marginTop: 10,
+    marginTop: 20,
+    marginBottom: 10,
     textAlign: 'center',
   },
   title: {

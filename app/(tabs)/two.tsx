@@ -3,6 +3,8 @@ import { Text, View } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getBackgroundColors } from '@/constants/globals';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function TabTwoScreen() {
   const [data, setData] = useState([]);
@@ -14,6 +16,7 @@ export default function TabTwoScreen() {
         const parsedData = JSON.parse(storedData);
         const formattedData = parsedData.map(entry => ({
           date: entry.date,
+          name: entry.name,
           bmi: entry.bmi,
         }));
         setData(formattedData);
@@ -23,6 +26,8 @@ export default function TabTwoScreen() {
     }
   };
 
+  const { isSwitchOn } = useTheme();
+  
   const handleDeleteAllData = async () => {
     Alert.alert(
       'Confirm Deletion',
@@ -53,20 +58,30 @@ export default function TabTwoScreen() {
 
     const intervalId = setInterval(() => {
       fetchData();
-    }, 2000); // Check every 5 seconds
+    }, 2000); // Check every 2 seconds
 
     return () => {
       clearInterval(intervalId);
     };
   }, []);
 
+  const backgroundColors = getBackgroundColors(isSwitchOn);
+  const textColor = isSwitchOn ? '#fff' : '#333';
+
   return (
-    <LinearGradient colors={['#55B8D7', '#fff']} style={styles.container}>
-      <Text style={styles.title}>HISTORY</Text>
+    <LinearGradient 
+      colors={backgroundColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1.1 }}
+      locations={[0, 1]}
+      style={styles.container}
+    >
+      <Text style={[styles.title, { color: textColor }]}>HISTORY</Text>
 
       <View style={styles.tableContainer}>
         <View style={styles.tableRow}>
           <Text style={styles.tableHeader}>Date</Text>
+          <Text style={styles.tableHeader}>Name</Text>
           <Text style={styles.tableHeader}>BMI</Text>
         </View>
 
@@ -75,6 +90,7 @@ export default function TabTwoScreen() {
             data.map((entry, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{entry.date}</Text>
+                <Text style={styles.tableCell}>{entry.name}</Text>
                 <Text style={styles.tableCell}>{`${entry.bmi}`}</Text>
               </View>
             ))
