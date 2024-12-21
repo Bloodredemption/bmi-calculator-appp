@@ -230,7 +230,7 @@ export default function TabOneScreen() {
             keyboardType="numeric"
             value={weight}
             onChangeText={setWeight}
-            placeholder="Enter your weight"
+            placeholder="Weight in kg/lb"
           />
           <View style={styles.pickerContainer}>
             <Picker
