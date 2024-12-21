@@ -81,7 +81,6 @@ export default function TabTwoScreen() {
       <View style={styles.tableContainer}>
         <View style={styles.tableRow}>
           <Text style={styles.tableHeader}>Date</Text>
-          <Text style={styles.tableHeader}>Name</Text>
           <Text style={styles.tableHeader}>BMI</Text>
         </View>
 
@@ -90,7 +89,6 @@ export default function TabTwoScreen() {
             data.map((entry, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{entry.date}</Text>
-                <Text style={styles.tableCell}>{entry.name}</Text>
                 <Text style={styles.tableCell}>{`${entry.bmi}`}</Text>
               </View>
             ))
